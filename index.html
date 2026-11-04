@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SRM AI Assistant</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet"/>
+  <style>
+    :root{--bg:#0a0a0f;--surface:#111118;--surface2:#1a1a24;--border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);--accent:#6c63ff;--accent2:#ff6584;--accent3:#43e8ad;--text:#f0efff;--text2:#8b8aa8;--text3:#55546a;--user-bg:#6c63ff;--bot-bg:#1a1a24}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .blob{position:fixed;border-radius:50%;filter:blur(80px);opacity:.18;pointer-events:none;z-index:0}
+    .b1{width:500px;height:500px;background:var(--accent);top:-150px;left:-150px;animation:d1 18s ease-in-out infinite}
+    .b2{width:400px;height:400px;background:var(--accent2);bottom:-100px;right:-100px;animation:d2 22s ease-in-out infinite}
+    .b3{width:300px;height:300px;background:var(--accent3);top:40%;left:40%;animation:d3 15s ease-in-out infinite}
+    @keyframes d1{0%,100%{transform:translate(0,0)}50%{transform:translate(40px,30px)}}
+    @keyframes d2{0%,100%{transform:translate(0,0)}50%{transform:translate(-30px,-40px)}}
+    @keyframes d3{0%,100%{transform:translate(0,0)}50%{transform:translate(20px,-20px)}}
+    .wrapper{position:relative;z-index:1;display:flex;gap:24px;align-items:flex-start;width:100%;max-width:920px;padding:24px}
+    .sidebar{width:220px;flex-shrink:0;display:flex;flex-direction:column;gap:10px;animation:fadeUp .6s ease both}
+    .sidebar-logo{display:flex;align-items:center;gap:10px;padding:0 4px 14px;border-bottom:1px solid var(--border)}
+    .logo-mark{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:white;flex-shrink:0}
+    .logo-text{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text);line-height:1.2}
+    .logo-sub{font-size:10px;color:var(--text3)}
+    .sec-label{font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;padding:0 4px;margin-top:4px}
+    .qbtn{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:12.5px;color:var(--text2);cursor:pointer;text-align:left;transition:all .2s;font-family:'DM Sans',sans-serif;line-height:1.4;width:100%}
+    .qbtn:hover{background:var(--surface2);border-color:var(--border2);color:var(--text);transform:translateX(2px)}
+    .qbtn .qi{font-size:13px;margin-bottom:3px;display:block}
+    .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:4px}
+    .stat-row{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--text3);margin-bottom:6px}
+    .stat-row:last-child{margin-bottom:0}
+    .sdot{width:6px;height:6px;border-radius:50%}
+    .dg{background:var(--accent3);box-shadow:0 0 6px var(--accent3)}
+    .sval{font-size:11.5px;color:var(--text2);font-weight:500}
+    .chat-panel{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:20px;display:flex;flex-direction:column;height:680px;overflow:hidden;animation:fadeUp .5s ease both}
+    .chat-header{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.02)}
+    .h-av{width:42px;height:42px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:18px;color:white;position:relative;flex-shrink:0}
+    .h-av::after{content:'';position:absolute;bottom:-2px;right:-2px;width:10px;height:10px;background:var(--accent3);border-radius:50%;border:2px solid var(--surface)}
+    .h-info{flex:1}
+    .h-name{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--text)}
+    .h-status{font-size:12px;color:var(--accent3);margin-top:1px;display:flex;align-items:center;gap:5px}
+    .pulse{width:6px;height:6px;background:var(--accent3);border-radius:50%;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+    .ctx-pill{background:rgba(108,99,255,.15);border:1px solid rgba(108,99,255,.3);border-radius:20px;padding:4px 12px;font-size:11px;color:#a09bff;display:none;align-items:center;gap:5px}
+    .ctx-pill.on{display:flex}
+    .ctx-dot{width:5px;height:5px;background:var(--accent);border-radius:50%}
+    .msgs{flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:18px;scroll-behavior:smooth}
+    .msgs::-webkit-scrollbar{width:4px}
+    .msgs::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+    .mrow{display:flex;gap:10px;animation:fadeUp .3s ease both}
+    .mrow.user{flex-direction:row-reverse}
+    .mav{width:30px;height:30px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-top:2px}
+    .bot-av{background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;font-family:'Syne',sans-serif}
+    .user-av{background:var(--surface2);color:var(--text2);border:1px solid var(--border2)}
+    .mcontent{max-width:78%;display:flex;flex-direction:column;gap:4px}
+    .mrow.user .mcontent{align-items:flex-end}
+    .bubble{padding:12px 16px;border-radius:16px;font-size:14px;line-height:1.65;color:var(--text)}
+    .bot-b{background:var(--bot-bg);border:1px solid var(--border);border-top-left-radius:4px}
+    .user-b{background:var(--user-bg);border-top-right-radius:4px;color:white}
+    .mtime{font-size:10.5px;color:var(--text3);padding:0 4px}
+    .dept-grid{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+    .dc{background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text);transition:all .2s;display:flex;align-items:center;justify-content:space-between}
+    .dc:hover{background:rgba(108,99,255,.15);border-color:rgba(108,99,255,.4);color:#a09bff;transform:translateX(3px)}
+    .dc-arr{font-size:12px;color:var(--text3)}
+    .src-link{display:inline-flex;align-items:center;gap:4px;margin-top:8px;font-size:11.5px;color:var(--accent);text-decoration:none;opacity:.85}
+    .src-link:hover{opacity:1;text-decoration:underline}
+    .typ-row{display:flex;gap:10px}
+    .typ-bub{background:var(--bot-bg);border:1px solid var(--border);border-radius:16px;border-top-left-radius:4px;padding:14px 18px;display:flex;gap:5px;align-items:center}
+    .typ-bub span{width:6px;height:6px;background:var(--text3);border-radius:50%;animation:tb 1.3s infinite}
+    .typ-bub span:nth-child(2){animation-delay:.15s}
+    .typ-bub span:nth-child(3){animation-delay:.3s}
+    @keyframes tb{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
+    .chat-footer{padding:16px 20px;border-top:1px solid var(--border);background:rgba(0,0,0,.15)}
+    .irow{display:flex;align-items:flex-end;gap:10px;background:var(--surface2);border:1px solid var(--border2);border-radius:14px;padding:10px 10px 10px 16px;transition:border-color .2s}
+    .irow:focus-within{border-color:rgba(108,99,255,.5)}
+    .chat-ta{flex:1;background:transparent;border:none;outline:none;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text);resize:none;max-height:100px;line-height:1.5}
+    .chat-ta::placeholder{color:var(--text3)}
+    .send-btn{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),#8b84ff);border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+    .send-btn:hover{transform:scale(1.05);box-shadow:0 4px 16px rgba(108,99,255,.4)}
+    .send-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+    .send-btn svg{width:16px;height:16px;fill:white}
+    .fhint{font-size:11px;color:var(--text3);text-align:center;margin-top:10px}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    @media(max-width:700px){.sidebar{display:none}.wrapper{padding:0}.chat-panel{border-radius:0;height:100vh}}
+  </style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div>
+<div class="wrapper">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-mark">S</div>
+      <div><div class="logo-text">SRM AI</div><div class="logo-sub">Kattankulathur</div></div>
+    </div>
+    <div class="sec-label">Quick Ask</div>
+    <button class="qbtn" onclick="send('What departments are available at SRM?')"><span class="qi">🏛</span>All departments</button>
+    <button class="qbtn" onclick="send('When does admission start for 2026?')"><span class="qi">📋</span>Admissions 2026</button>
+    <button class="qbtn" onclick="send('Tell me about campus life at SRM')"><span class="qi">🎉</span>Campus life</button>
+    <button class="qbtn" onclick="send('What hostel facilities are available?')"><span class="qi">🏠</span>Hostel info</button>
+    <button class="qbtn" onclick="send('What are the placement statistics at SRM?')"><span class="qi">💼</span>Placements</button>
+    <button class="qbtn" onclick="send('What transport facilities does SRM provide?')"><span class="qi">🚌</span>Transport</button>
+    <div class="stat-card">
+      <div class="sec-label" style="margin:0 0 10px">System</div>
+      <div class="stat-row"><span>Knowledge base</span><div style="display:flex;align-items:center;gap:5px"><div class="sdot dg"></div><span class="sval">Live</span></div></div>
+      <div class="stat-row"><span>AI model</span><div style="display:flex;align-items:center;gap:5px"><div class="sdot dg"></div><span class="sval">Gemini</span></div></div>
+      <div class="stat-row"><span>Data updated</span><span class="sval" id="upd">Today</span></div>
+    </div>
+  </div>
+  <div class="chat-panel">
+    <div class="chat-header">
+      <div class="h-av">S</div>
+      <div class="h-info">
+        <div class="h-name">SRM AI Assistant</div>
+        <div class="h-status"><div class="pulse"></div>Online — knows SRM inside out</div>
+      </div>
+      <div class="ctx-pill" id="ctxPill"><div class="ctx-dot"></div><span id="ctxText"></span></div>
+    </div>
+    <div class="msgs" id="msgs"></div>
+    <div class="chat-footer">
+      <div class="irow">
+        <textarea class="chat-ta" id="input" placeholder="Ask anything about SRMIST..." rows="1" onkeydown="handleKey(event)" oninput="resize(this)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+          <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </div>
+      <div class="fhint">Enter to send &nbsp;·&nbsp; Shift+Enter for new line</div>
+    </div>
+  </div>
+</div>
+<script>
+  const API="http://localhost:8000";
+  let sid=null,busy=false;
+  window.onload=()=>{
+    document.getElementById('upd').textContent=new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    botMsg("Hi there! I'm your SRM AI Assistant — I know everything about SRMIST Kattankulathur.\n\nAsk me about departments, courses, admissions, hostel, transport, placements, campus life, and more. I remember our conversation context too!");
+  };
+  function resize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px';}
+  function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+  async function sendMessage(){
+    const inp=document.getElementById('input');
+    const msg=inp.value.trim();
+    if(!msg||busy)return;
+    inp.value='';inp.style.height='auto';
+    userMsg(msg);showTyping();setBusy(true);
+    try{
+      const r=await fetch(`${API}/chat`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,session_id:sid})});
+      const d=await r.json();
+      sid=d.session_id;removeTyping();botMsg(d.reply);
+      if(d.department_context){
+        const dept=d.department_context.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+        document.getElementById('ctxText').textContent=dept+' Dept';
+        document.getElementById('ctxPill').classList.add('on');
+      }
+    }catch(e){removeTyping();botMsg("Can't reach the backend. Make sure it's running:\n\npython backend/main.py");}
+    setBusy(false);
+  }
+  function send(t){document.getElementById('input').value=t;sendMessage();}
+  function setBusy(v){busy=v;document.getElementById('sendBtn').disabled=v;}
+  function userMsg(t){
+    const el=document.createElement('div');el.className='mrow user';
+    el.innerHTML=`<div class="mcontent"><div class="bubble user-b">${esc(t)}</div><div class="mtime">${ts()}</div></div><div class="mav user-av">Y</div>`;
+    document.getElementById('msgs').appendChild(el);scroll();
+  }
+  function botMsg(t){
+    const el=document.createElement('div');el.className='mrow';
+    el.innerHTML=`<div class="mav bot-av">S</div><div class="mcontent"><div class="bubble bot-b">${render(t)}</div><div class="mtime">${ts()}</div></div>`;
+    document.getElementById('msgs').appendChild(el);scroll();
+  }
+  function render(t){
+    t=t.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g,'<a href="$2" target="_blank" class="src-link">$1 ↗</a>');
+    t=t.replace(/📎 Source: (.+)/g,'<br><span class="src-link">📎 $1</span>');
+    t=t.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+    t=t.replace(/\n/g,'<br>');
+    if(/\d+\.\s+.+(department|engineering|science|technology|arts)/i.test(t)){
+      t=t.replace(/(\d+)\.\s+([^<]+)/g,(_,n,name)=>{
+        const c=name.trim().replace(/<[^>]+>/g,'');
+        return `<div class="dc" onclick="send('Tell me everything about ${c} at SRM')">${c}<span class="dc-arr">→</span></div>`;
+      });
+      t=`<div class="dept-grid">${t}</div>`;
+    }
+    return t;
+  }
+  function showTyping(){const el=document.createElement('div');el.className='typ-row';el.id='typ';el.innerHTML=`<div class="mav bot-av">S</div><div class="typ-bub"><span></span><span></span><span></span></div>`;document.getElementById('msgs').appendChild(el);scroll();}
+  function removeTyping(){const e=document.getElementById('typ');if(e)e.remove();}
+  function scroll(){const m=document.getElementById('msgs');m.scrollTop=m.scrollHeight;}
+  function ts(){return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});}
+  function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+</script>
+</body>
+</html>
